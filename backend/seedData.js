@@ -130,10 +130,10 @@ const seedDatabase = async () => {
                 contactPersonPhone: comp.contactPersonPhone,
                 description: comp.description,
                 eligibilityCriteria: {
-                    minimumCGPA: 6.5,
-                    allowedDepartments: ['CSE', 'IT', 'ECE'],
-                    allowedYears: [3, 4],
-                    requiredSkills: ['Java', 'Python'],
+                    minCGPA: 6.5,
+                    departments: ['CSE', 'IT', 'ECE'],
+                    years: ['3rd Year', 'Final Year'],
+                    skills: ['Java', 'Python'],
                 },
             });
 
@@ -245,20 +245,19 @@ const seedDatabase = async () => {
             const currentYear = new Date().getFullYear();
             const graduationYear = stud.yearOfStudy === 4 ? currentYear : currentYear + (4 - stud.yearOfStudy);
 
+            let yearString = 'Final Year';
+            if (stud.yearOfStudy === 1) yearString = '1st Year';
+            else if (stud.yearOfStudy === 2) yearString = '2nd Year';
+            else if (stud.yearOfStudy === 3) yearString = '3rd Year';
+
             const student = await StudentProfile.create({
                 userId: studentUser._id,
                 registerNumber: stud.registerNumber,
                 department: stud.department,
-                yearOfStudy: stud.yearOfStudy,
-                dateOfBirth: new Date(stud.dateOfBirth),
-                phone: stud.phone,
-                academicDetails: {
-                    cgpa: stud.cgpa,
-                    tenthPercentage: 85 + Math.random() * 10,
-                    twelfthPercentage: 80 + Math.random() * 15,
-                    currentSemester: stud.yearOfStudy * 2,
-                    backlogs: 0,
-                    yearOfGraduation: graduationYear,
+                year: yearString,
+                cgpa: stud.cgpa,
+                contactDetails: {
+                    phone: stud.phone,
                 },
                 skills: stud.skills,
                 resumePath: null,
@@ -282,10 +281,10 @@ const seedDatabase = async () => {
                 driveDate: driveDate,
                 description: `Campus placement drive for ${comp.company.jobRole} position`,
                 eligibilityCriteria: {
-                    minimumCGPA: 6.5 + Math.random() * 1.5,
-                    allowedDepartments: ['CSE', 'IT', 'ECE'].slice(0, 2 + Math.floor(Math.random() * 2)),
-                    allowedYears: [3, 4],
-                    requiredSkills: comp.company.eligibilityCriteria.requiredSkills,
+                    minCGPA: 6.5 + Math.random() * 1.5,
+                    departments: ['CSE', 'IT', 'ECE'].slice(0, 2 + Math.floor(Math.random() * 2)),
+                    years: ['3rd Year', 'Final Year'],
+                    skills: comp.company.eligibilityCriteria.skills || ['Java', 'Python'],
                 },
                 registrationDeadline: new Date(driveDate.getTime() - 2 * 24 * 60 * 60 * 1000),
                 status: 'Active',
@@ -299,11 +298,11 @@ const seedDatabase = async () => {
         for (const drive of drives) {
             for (const student of students) {
                 const isEligible =
-                    student.profile.academicDetails.cgpa >= drive.eligibilityCriteria.minimumCGPA &&
-                    drive.eligibilityCriteria.allowedDepartments.includes(student.profile.department) &&
-                    drive.eligibilityCriteria.allowedYears.includes(student.profile.yearOfStudy);
+                    student.profile.cgpa >= drive.eligibilityCriteria.minCGPA &&
+                    drive.eligibilityCriteria.departments.includes(student.profile.department) &&
+                    drive.eligibilityCriteria.years.includes(student.profile.year);
 
-                const hasRequiredSkills = drive.eligibilityCriteria.requiredSkills.some((skill) =>
+                const hasRequiredSkills = drive.eligibilityCriteria.skills.some((skill) =>
                     student.profile.skills.includes(skill)
                 );
 
@@ -311,7 +310,6 @@ const seedDatabase = async () => {
                     studentId: student.profile._id,
                     driveId: drive._id,
                     isEligible: isEligible && hasRequiredSkills,
-                    eligibilityStatus: isEligible && hasRequiredSkills ? 'Eligible' : 'Not Eligible',
                     reasons: !isEligible
                         ? ['Does not meet minimum CGPA or department criteria']
                         : !hasRequiredSkills
@@ -321,7 +319,7 @@ const seedDatabase = async () => {
 
                 // Auto-apply eligible students to drives
                 if (isEligible && hasRequiredSkills && Math.random() > 0.3) {
-                    drive.appliedStudents.push(student.profile._id);
+                    drive.applicants.push(student.profile._id);
                 }
             }
             await drive.save();
@@ -330,7 +328,7 @@ const seedDatabase = async () => {
 
         // 6. Create Sample Interview Schedules
         const activeDrive = drives[0];
-        const eligibleStudents = students.filter((s) => s.profile.academicDetails.cgpa >= 7.0).slice(0, 4);
+        const eligibleStudents = students.filter((s) => s.profile.cgpa >= 7.0).slice(0, 4);
 
         for (const student of eligibleStudents) {
             const interviewDate = new Date(activeDrive.driveDate);
@@ -339,10 +337,9 @@ const seedDatabase = async () => {
             await InterviewSchedule.create({
                 driveId: activeDrive._id,
                 studentId: student.profile._id,
-                roundName: 'Written Test',
-                roundNumber: 1,
-                interviewDate: interviewDate,
-                interviewTime: '10:00 AM',
+                round: 'Written Test',
+                scheduledDate: interviewDate,
+                scheduledTime: '10:00 AM',
                 venue: 'Examination Hall A',
                 status: 'Scheduled',
                 instructions: 'Please bring your ID card and a pen. No electronic devices allowed.',
@@ -359,8 +356,9 @@ const seedDatabase = async () => {
                 status: 'Selected',
                 offerDetails: {
                     package: companies[0].company.salaryPackage,
+                    designation: companies[0].company.jobRole,
                     joiningDate: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000),
-                    bond: '2 years',
+                    location: companies[0].company.location,
                 },
                 remarks: 'Congratulations! You have been selected.',
             });
