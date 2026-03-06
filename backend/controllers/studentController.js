@@ -204,7 +204,7 @@ const getAllStudents = async (req, res, next) => {
  */
 const approveStudent = async (req, res, next) => {
     try {
-        const { isApproved } = req.body;
+        const { isApproved, reason } = req.body;
 
         const student = await StudentProfile.findByIdAndUpdate(
             req.params.id,
@@ -216,6 +216,27 @@ const approveStudent = async (req, res, next) => {
             return res.status(404).json({
                 success: false,
                 message: 'Student not found',
+            });
+        }
+
+        const Notification = require('../models/Notification');
+        if (!isApproved && reason && student.userId) {
+            await Notification.create({
+                userId: student.userId._id,
+                type: 'System',
+                title: 'Profile Verification Rejected',
+                message: `Your profile approval was rejected. Reason: ${reason}`,
+                relatedId: student._id,
+                relatedModel: 'StudentProfile',
+            });
+        } else if (isApproved && student.userId) {
+            await Notification.create({
+                userId: student.userId._id,
+                type: 'System',
+                title: 'Profile Approved',
+                message: `Your profile has been successfully approved! You can now apply for placement drives.`,
+                relatedId: student._id,
+                relatedModel: 'StudentProfile',
             });
         }
 

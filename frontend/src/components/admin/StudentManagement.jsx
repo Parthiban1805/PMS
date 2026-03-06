@@ -1,6 +1,6 @@
 /**
  * Student Management Component
- * Admin view to manage student profiles
+ * Admin view to manage student profiles with Approve/Reject reason functions
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,6 +13,12 @@ const StudentManagement = () => {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+
+    // Reject Modal State
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [actionLoading, setActionLoading] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -29,22 +35,58 @@ const StudentManagement = () => {
         }
     };
 
-    const handleApprove = async (id, isApproved) => {
+    const handleApprove = async (id) => {
+        if (!window.confirm("Approve this student's profile?")) return;
+        setActionLoading(true);
         try {
-            await studentAPI.approveStudent(id, isApproved);
-            fetchStudents();
+            await studentAPI.approveStudent(id, true);
+            alert('Student approved successfully.');
+            await fetchStudents();
         } catch (error) {
-            console.error('Error updating student:', error);
+            console.error('Error approving student:', error);
+            alert('Failed to approve student');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openRejectModal = (id) => {
+        setSelectedStudentId(id);
+        setRejectReason('');
+        setIsRejectModalOpen(true);
+    };
+
+    const handleRejectSubmit = async (e) => {
+        e.preventDefault();
+        if (!rejectReason.trim()) {
+            alert('Please provide a reason for rejection.');
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            await studentAPI.approveStudent(selectedStudentId, false, rejectReason); // assume modified API accepts reason
+            alert('Student rejected successfully.');
+            setIsRejectModalOpen(false);
+            await fetchStudents();
+        } catch (error) {
+            console.error('Error rejecting student:', error);
+            alert('Failed to reject student');
+        } finally {
+            setActionLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this student?')) {
+        if (window.confirm('Are you sure you want to delete this student entirely from the system?')) {
+            setActionLoading(true);
             try {
                 await studentAPI.deleteStudent(id);
-                fetchStudents();
+                await fetchStudents();
             } catch (error) {
                 console.error('Error deleting student:', error);
+            } finally {
+                setActionLoading(false);
             }
         }
     };
@@ -56,7 +98,7 @@ const StudentManagement = () => {
     });
 
     return (
-        <div className="flex min-h-screen bg-secondary-50">
+        <div className="flex min-h-screen bg-secondary-50 relative">
             <Sidebar />
             <div className="flex-1">
                 <Navbar />
@@ -69,36 +111,25 @@ const StudentManagement = () => {
                             className="input w-48"
                         >
                             <option value="all">All Students</option>
-                            <option value="approved">Approved Only</option>
-                            <option value="pending">Pending Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
                         </select>
                     </div>
 
                     {loading ? (
                         <LoadingSpinner />
                     ) : (
-                        <div className="card overflow-hidden">
-                            <table className="table">
+                        <div className="card overflow-x-auto">
+                            <table className="table min-w-full">
                                 <thead className="table-header">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            Name
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            Register No
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            Department
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            CGPA
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Register No</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Department</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">CGPA</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Submitted Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-secondary-200">
@@ -116,8 +147,11 @@ const StudentManagement = () => {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="badge badge-primary">{student.department}</span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900 font-semibold">
                                                 {student.cgpa}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-600">
+                                                {new Date(student.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {student.isApproved ? (
@@ -126,29 +160,34 @@ const StudentManagement = () => {
                                                     <span className="badge badge-warning">Pending</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                                                {!student.isApproved && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
+                                                {!student.isApproved ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleApprove(student._id)}
+                                                            className="btn btn-success text-xs py-1 px-3"
+                                                            disabled={actionLoading}
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button
+                                                            onClick={() => openRejectModal(student._id)}
+                                                            className="btn btn-danger text-xs py-1 px-3"
+                                                            disabled={actionLoading}
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </>
+                                                ) : (
                                                     <button
-                                                        onClick={() => handleApprove(student._id, true)}
-                                                        className="btn btn-success text-xs"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                )}
-                                                {student.isApproved && (
-                                                    <button
-                                                        onClick={() => handleApprove(student._id, false)}
-                                                        className="btn btn-secondary text-xs"
+                                                        onClick={() => openRejectModal(student._id)}
+                                                        className="btn btn-secondary text-xs py-1 px-3"
+                                                        disabled={actionLoading}
+                                                        title="Revoke Approval Status"
                                                     >
                                                         Revoke
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => handleDelete(student._id)}
-                                                    className="btn btn-danger text-xs"
-                                                >
-                                                    Delete
-                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -157,13 +196,53 @@ const StudentManagement = () => {
 
                             {filteredStudents.length === 0 && (
                                 <div className="text-center py-12">
-                                    <p className="text-secondary-500">No students found</p>
+                                    <p className="text-secondary-500">No students found matching filters.</p>
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Reject Reason Modal */}
+            {isRejectModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl">
+                        <h2 className="text-xl font-bold text-secondary-900 mb-4">Reject Profile</h2>
+                        <form onSubmit={handleRejectSubmit}>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-secondary-700 mb-2">Reason for rejection *</label>
+                                <textarea
+                                    className="input w-full h-24 resize-none"
+                                    placeholder="e.g. CGPA does not match marksheet, Invalid Registration Number, etc."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    required
+                                    autoFocus
+                                ></textarea>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRejectModalOpen(false)}
+                                    className="btn btn-secondary text-sm"
+                                    disabled={actionLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-danger text-sm"
+                                    disabled={actionLoading || !rejectReason.trim()}
+                                >
+                                    {actionLoading ? 'Processing...' : 'Confirm Reject'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

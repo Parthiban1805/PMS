@@ -203,7 +203,10 @@ const getDriveById = async (req, res, next) => {
     try {
         const drive = await PlacementDrive.findById(req.params.id)
             .populate('companyId')
-            .populate('applicants', 'registerNumber userId');
+            .populate({
+                path: 'applicants',
+                populate: { path: 'userId', select: 'name email' }
+            });
 
         if (!drive) {
             return res.status(404).json({

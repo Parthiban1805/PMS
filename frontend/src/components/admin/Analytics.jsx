@@ -107,28 +107,29 @@ const Analytics = () => {
 
                             {/* Company Wise Chart */}
                             <div className="card p-6">
-                                <h2 className="text-lg font-semibold mb-4 text-center">Company-wise Hiring</h2>
-                                <div className="h-[300px]">
+                                <h2 className="text-lg font-semibold mb-4 text-center">Top Recruiters</h2>
+                                <div className="h-[300px] overflow-y-auto">
                                     {companyWise.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={companyWise}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                                    outerRadius={100}
-                                                    fill="#8884d8"
-                                                    dataKey="studentCount"
-                                                >
-                                                    {companyWise.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip formatter={(value) => [value, 'Placed Students']} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
+                                        <table className="table min-w-full">
+                                            <thead className="table-header sticky top-0 bg-secondary-100">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Company Name</th>
+                                                    <th className="px-4 py-2 text-right text-xs font-semibold text-secondary-600">Offers Made</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-secondary-100">
+                                                {companyWise.sort((a, b) => b.studentCount - a.studentCount).map((company, idx) => (
+                                                    <tr key={company._id} className="hover:bg-secondary-50">
+                                                        <td className="px-4 py-3 font-medium text-secondary-900 border-none">
+                                                            {idx + 1}. {company._id}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-bold text-primary-600 border-none">
+                                                            {company.studentCount}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     ) : (
                                         <div className="h-full flex items-center justify-center text-secondary-500">No data available</div>
                                     )}
