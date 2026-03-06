@@ -119,23 +119,8 @@ const Register = () => {
                             />
                         </div>
 
-                        {/* Role Selection */}
-                        <div className="form-group">
-                            <label htmlFor="role" className="form-label">
-                                Register as
-                            </label>
-                            <select
-                                id="role"
-                                name="role"
-                                className="input"
-                                value={formData.role}
-                                onChange={handleChange}
-                            >
-                                <option value="Student">Student</option>
-                                <option value="Company">Company</option>
-                                <option value="Admin">Admin</option>
-                            </select>
-                        </div>
+                        {/* Role is fixed to Student — Companies are added by Admin */}
+                        <input type="hidden" name="role" value="Student" />
 
                         {/* Password Field */}
                         <div className="form-group">

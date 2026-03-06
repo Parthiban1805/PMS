@@ -35,7 +35,7 @@ const notificationSchema = new mongoose.Schema({
     },
     relatedModel: {
         type: String,
-        enum: ['PlacementDrive', 'InterviewSchedule', 'Result'],
+        enum: ['PlacementDrive', 'InterviewSchedule', 'Result', 'StudentProfile'],
     },
     // Read status
     isRead: {

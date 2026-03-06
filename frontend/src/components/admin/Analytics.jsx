@@ -121,7 +121,7 @@ const Analytics = () => {
                                                 {companyWise.sort((a, b) => b.studentCount - a.studentCount).map((company, idx) => (
                                                     <tr key={company._id} className="hover:bg-secondary-50">
                                                         <td className="px-4 py-3 font-medium text-secondary-900 border-none">
-                                                            {idx + 1}. {company._id}
+                                                            {idx + 1}. {company.companyName || company._id}
                                                         </td>
                                                         <td className="px-4 py-3 text-right font-bold text-primary-600 border-none">
                                                             {company.studentCount}

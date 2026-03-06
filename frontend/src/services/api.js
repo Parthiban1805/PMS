@@ -64,7 +64,7 @@ export const studentAPI = {
     }),
     getOwnProfile: () => api.get('/students/profile'),
     getAllStudents: (params) => api.get('/students', { params }),
-    approveStudent: (id, isApproved) => api.put(`/students/${id}/approve`, { isApproved }),
+    approveStudent: (id, isApproved, reason) => api.put(`/students/${id}/approve`, { isApproved, reason }),
     deleteStudent: (id) => api.delete(`/students/${id}`),
 };
 

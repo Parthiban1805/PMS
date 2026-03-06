@@ -159,7 +159,7 @@ const ProfileManagement = () => {
 
                             {/* Form / Details Card */}
                             <div className="card p-6 col-span-1 md:col-span-2 shadow-sm border border-secondary-100">
-                                {isEditMode ? (
+                                {isEditMode || !profile ? (
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -317,7 +317,7 @@ const ProfileManagement = () => {
                                         </div>
                                     )}
 
-                                    {!isEditMode && profile && (
+                                    {profile && (
                                         <div>
                                             <label className="btn btn-secondary w-full text-center cursor-pointer border-dashed border-2 hover:bg-secondary-50">
                                                 {saving ? 'Uploading...' : 'Upload New Resume (PDF)'}
